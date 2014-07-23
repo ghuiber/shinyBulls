@@ -1,38 +1,70 @@
-# Note: percent map is designed to work with the counties data set
-# It may not work correctly with other data sets if their row order does 
-# not exactly match the order in which the maps package plots counties
-percent_map <- function(var, color, legend.title, min = 0, max = 100) {
+# libraries I'll need
+library(ggplot2)
+library(plyr)
 
-  # generate vector of fill colors for map
-  shades <- colorRampPalette(c("white", color))(100)
-  
-  # constrain gradient to percents that occur between min and max
-  var <- pmax(var, min)
-  var <- pmin(var, max)
-  percents <- as.integer(cut(var, 100, 
-    include.lowest = TRUE, ordered = TRUE))
-  fills <- shades[percents]
+# ggplot2 settings
+theme_set(theme_gray() + theme(axis.text.x = element_text(angle = 90, hjust = 1)))
 
-  # plot choropleth map
-  map("county", fill = TRUE, col = fills, 
-    resolution = 0, lty = 0, projection = "polyconic", 
-    myborder = 0, mar = c(0,0,0,0))
-  
-  # overlay state borders
-  map("state", col = "white", fill = FALSE, add = TRUE,
-    lty = 1, lwd = 1, projection = "polyconic", 
-    myborder = 0, mar = c(0,0,0,0))
-  
-  # add a legend
-  inc <- (max - min) / 4
-  legend.text <- c(paste0(min, " % or less"),
-    paste0(min + inc, " %"),
-    paste0(min + 2 * inc, " %"),
-    paste0(min + 3 * inc, " %"),
-    paste0(max, " % or more"))
-  
-  legend("bottomleft", 
-    legend = legend.text, 
-    fill = shades[c(1, 25, 50, 75, 100)], 
-    title = legend.title)
+# draw density plot of paces
+# argument is a list x, whose 1st element is the data to draw from
+# and 2nd element is a text blurb that tells which years
+drawPdens <- function(x) {
+    df    <- x[[1]]
+    tag   <- x[[2]]
+    men   <- nrow(subset(df,Gender=='M'))
+    women <- nrow(subset(df,Gender=='F'))
+    count <- paste('(',prettyNum(men,big.mark=','),' male and ',
+                   prettyNum(women,big.mark=','),' female runners)',sep='')
+    tag <- paste('Minutes/mile',tag,sep=', ')
+    tag <- paste(tag,count,'vertical lines at the means',sep='\n')
+    mpace <- ddply(df, "Gender", summarise, 
+                   pace.mean=mean(Pace),
+                   pace.median=median(Pace),
+                   age.mean=mean(Age),
+                   age.median=median(Age))
+    phist <- ggplot(df, aes(x=Pace, colour=Gender)) + 
+        geom_density() + 
+        geom_vline(data=mpace, aes(xintercept=pace.mean,  colour=Gender), size=1) + 
+        ggtitle(tag)
+    return(phist)
+}
+
+# draw a bar plot of age groups
+# argument is a list x, whose 1st element is the data to draw from
+# and 2nd element is a text blurb that tells which years
+drawBarplots <- function(x) {
+    df  <- x[[1]]
+    tag <- x[[2]]
+    men   <- nrow(subset(df,Gender=='M'))
+    women <- nrow(subset(df,Gender=='F'))    
+    layout(matrix(c(1,2), 1, 2, byrow = TRUE))
+    barplot(table(subset(df,Gender=='M')$Group),
+            las=2,main=paste("Males",tag,sep=", "),
+            sub=paste(prettyNum(men,big.mark=','),'runners',sep=' '))
+    barplot(table(subset(df,Gender=='F')$Group),
+            las=2,main=paste("Females",tag,sep=", "),
+            sub=paste(prettyNum(women,big.mark=','),'runners',sep=' '))
+}
+
+# Box plots of paces by age group, by gender
+# argument x is a list whose 1st element is the data to draw from
+# and 2nd element is a text blurb that tells which years
+plotPace <- function(x) {
+    df  <- x[[1]]
+    tag <- x[[2]]
+    yl <- "Pace (minutes / mile)"
+    p  <- ggplot(aes(y = Pace, x = factor(Group), fill = factor(Gender)), 
+                data = df) + geom_boxplot() + geom_jitter(alpha = 1/4) + ylab(yl) + 
+        xlab("Age Group") + ggtitle(tag) + scale_fill_discrete(name="Gender")
+    return(p)
+}
+
+# plot selector
+# argument i is an integer, indicating which plot we want
+# argument x is a list whose 1st element is the data to draw from
+# and 2nd element is a text blurb that tells which years
+plotIt <- function(i,x) {
+    if(i==1) return(drawBarplots(x))
+    else if(i==2) return(drawPdens(x))
+    return(plotPace(x))
 }
