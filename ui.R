@@ -12,7 +12,7 @@ shinyUI(fluidPage(
                                                  "Show box plots of paces by age group." = 3),selected = 1),  
                      checkboxGroupInput("checkYear", 
                                         label = h4("Data from:"), 
-                                        choices = list(2011,2012,2013,2014),
+                                        choices = list(2011,2012,2013,2014,2015),
                                         selected = 2011),
                      actionButton("getYears", "Go")),
         mainPanel(
