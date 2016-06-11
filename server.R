@@ -2,7 +2,7 @@ library(shiny)
 
 # code that runs once when app is launched
 # (getting ready for visitors)
-load('data/bulls.rda')
+load('data/bulls.RData')
 source("helpers.R")
 
 # this unnamed function runs every time
