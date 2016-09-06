@@ -1,5 +1,9 @@
 name: shinyBulls
 account: ghuiber
 server: shinyapps.io
-bundleId: 196047
-url: https://ghuiber.shinyapps.io/shinyBulls
+appId: 15700
+bundleId: 478156
+url: https://ghuiber.shinyapps.io/shinyBulls/
+when: 1465665499.03117
+asMultiple: FALSE
+asStatic: FALSE
